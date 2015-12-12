@@ -1,127 +1,35 @@
-// // Copyright (c) 2014 The Chromium Authors. All rights reserved.
-// // Use of this source code is governed by a BSD-style license that can be
-// // found in the LICENSE file.
-//
-// /**
-//  * Get the current URL.
-//  *
-//  * @param {function(string)} callback - called when the URL of the current tab
-//  *   is found.
-//  */
-// function getCurrentTabUrl(callback) {
-//   // Query filter to be passed to chrome.tabs.query - see
-//   // https://developer.chrome.com/extensions/tabs#method-query
-//   var queryInfo = {
-//     active: true,
-//     currentWindow: true
-//   };
-//
-//   chrome.tabs.query(queryInfo, function(tabs) {
-//     // chrome.tabs.query invokes the callback with a list of tabs that match the
-//     // query. When the popup is opened, there is certainly a window and at least
-//     // one tab, so we can safely assume that |tabs| is a non-empty array.
-//     // A window can only have one active tab at a time, so the array consists of
-//     // exactly one tab.
-//     var tab = tabs[0];
-//
-//     // A tab is a plain object that provides information about the tab.
-//     // See https://developer.chrome.com/extensions/tabs#type-Tab
-//     var url = tab.url;
-//
-//     // tab.url is only available if the "activeTab" permission is declared.
-//     // If you want to see the URL of other tabs (e.g. after removing active:true
-//     // from |queryInfo|), then the "tabs" permission is required to see their
-//     // "url" properties.
-//     console.assert(typeof url == 'string', 'tab.url should be a string');
-//
-//     callback(url);
-//   });
-//
-//   // Most methods of the Chrome extension APIs are asynchronous. This means that
-//   // you CANNOT do something like this:
-//   //
-//   // var url;
-//   // chrome.tabs.query(queryInfo, function(tabs) {
-//   //   url = tabs[0].url;
-//   // });
-//   // alert(url); // Shows "undefined", because chrome.tabs.query is async.
-// }
-//
-// /**
-//  * @param {string} searchTerm - Search term for Google Image search.
-//  * @param {function(string,number,number)} callback - Called when an image has
-//  *   been found. The callback gets the URL, width and height of the image.
-//  * @param {function(string)} errorCallback - Called when the image is not found.
-//  *   The callback gets a string that describes the failure reason.
-//  */
-// function getImageUrl(searchTerm, callback, errorCallback) {
-//   // Google image search - 100 searches per day.
-//   // https://developers.google.com/image-search/
-//   var searchUrl = 'https://ajax.googleapis.com/ajax/services/search/images' +
-//     '?v=1.0&q=' + encodeURIComponent(searchTerm);
-//   var x = new XMLHttpRequest();
-//   x.open('GET', searchUrl);
-//   // The Google image search API responds with JSON, so let Chrome parse it.
-//   x.responseType = 'json';
-//   x.onload = function() {
-//     // Parse and process the response from Google Image Search.
-//     var response = x.response;
-//     if (!response || !response.responseData || !response.responseData.results ||
-//         response.responseData.results.length === 0) {
-//       errorCallback('No response from Google Image search!');
-//       return;
-//     }
-//     var firstResult = response.responseData.results[0];
-//     // Take the thumbnail instead of the full image to get an approximately
-//     // consistent image size.
-//     var imageUrl = firstResult.tbUrl;
-//     var width = parseInt(firstResult.tbWidth);
-//     var height = parseInt(firstResult.tbHeight);
-//     console.assert(
-//         typeof imageUrl == 'string' && !isNaN(width) && !isNaN(height),
-//         'Unexpected respose from the Google Image Search API!');
-//     callback(imageUrl, width, height);
-//   };
-//   x.onerror = function() {
-//     errorCallback('Network error.');
-//   };
-//   x.send();
-// }
-//
-// function renderStatus(statusText) {
-//   document.getElementById('status').textContent = statusText;
-// }
-//
-// document.addEventListener('DOMContentLoaded', function() {
-//   getCurrentTabUrl(function(url) {
-//     // Put the image URL in Google search.
-//     renderStatus('Performing Google Image search for ' + url);
-//
-//     getImageUrl(url, function(imageUrl, width, height) {
-//
-//       renderStatus('Search term: ' + url + '\n' +
-//           'Google image search result: ' + imageUrl);
-//       var imageResult = document.getElementById('image-result');
-//       // Explicitly set the width/height to minimize the number of reflows. For
-//       // a single image, this does not matter, but if you're going to embed
-//       // multiple external images in your page, then the absence of width/height
-//       // attributes causes the popup to resize multiple times.
-//       imageResult.width = width;
-//       imageResult.height = height;
-//       imageResult.src = imageUrl;
-//       imageResult.hidden = false;
-//
-//     }, function(errorMessage) {
-//       renderStatus('Cannot display image. ' + errorMessage);
-//     });
-//   });
-// });
+var PROXY_QIHOO = {
+    mode: "fixed_servers",
+    rules: {
+        singleProxy: {
+            host: "10.16.13.18",
+            port: 8080
+        },
+        bypassList: ["<local>", "*corp.qihoo.net"]
+    }
+}
+var PROXY_DIRECT = {
+    mode: "direct"
+}
+var PROXY_RULES_KEY = 'proxy_rules';
 
-var PROXY_RULES = 'proxy_rules';
+chrome.proxy.settings.get(
+          {'incognito': false},
+          function(config) {console.log(config)});
 
 document.addEventListener('DOMContentLoaded', function() {
 
-    var status = document.querySelector('#status');
+
+    var curHostDOM = document.querySelector('#curHost');
+    var proxyModeDOM = document.querySelector('#proxyMode');
+    var statusDOM = document.querySelector('#status');
+    var btnStartProxy = document.querySelector('#btnStartProxy');
+    var btnStopProxy = document.querySelector('#btnStopProxy');
+
+    var currentHost = null;
+    var proxyRules = null;
+    var proxyRuleIndex = -1;
+
 
     chrome.tabs.query({
         active: true
@@ -130,29 +38,104 @@ document.addEventListener('DOMContentLoaded', function() {
         var location = getLocation(curURL);
         var host = location.hostname;
 
-        status.innerText = '*' + host;
+        currentHost = host;
+        curHostDOM.innerText = host;
 
-        chrome.storage.local.get(PROXY_RULES, function(obj) {
-            if (!PROXY_RULES in obj) {
-                var newObj = {};
-
-                newObj[PROXY_RULES] = [];
-                chrome.storage.local.set(newObj);
-            }
-
+        chrome.storage.local.get(null, function(obj) {
             console.log(obj);
-        })
+            if (!(PROXY_RULES_KEY in obj)) {
+                proxyRules = [];
+            } else {
+                proxyRules = Array.isArray(obj[PROXY_RULES_KEY]) && obj[PROXY_RULES_KEY] || [];
+                console.log(proxyRules);
+                proxyRuleIndex = proxyRules.indexOf(host);
 
-        chrome.proxy.settings.get({incognito: false}, function(conf) {
-            console.log(conf);
+                if (proxyRuleIndex >= 0) {
+                    proxyModeDOM.value = 1;
+                }
+            }
+        });
+    });
 
-        })
+    btnStartProxy.addEventListener('click', function() {
+        startProxy(statusDOM)
+    }, false);
 
+    btnStopProxy.addEventListener('click', function() {
+        stopProxy(statusDOM)
+    }, false);
+
+    proxyModeDOM.addEventListener('change', function() {
+        var mode = this.value;
+        console.log(proxyRules);
+        changeProxyMode(currentHost, mode, proxyRules, proxyRuleIndex);
     })
 })
 
 function getLocation(href) {
-    var l = document.createElement("a");
-    l.href = href;
-    return l;
+    var a = document.createElement("a");
+    a.href = href;
+    return a;
 };
+
+function startProxy(statusDOM) {
+    chrome.proxy.settings.set({
+        value: PROXY_QIHOO,
+        scope: 'regular'
+    });
+    statusDOM.innerText = "QIHOO";
+}
+
+function stopProxy(statusDOM) {
+    chrome.proxy.settings.set({
+        value: PROXY_DIRECT,
+        scope: 'regular'
+    });
+    statusDOM.innerText = "DIRECT";
+}
+
+function changeProxyMode(host, mode, rules, index) {
+    if (mode == 1 && index < 0) {
+        // 添加host
+        rules.push(host);
+        updateStorage(rules);
+    } else if (index >= 0) {
+        // 剔除host
+        rules.splice(index, 1);
+        updateStorage(rules);
+    }
+
+    chrome.proxy.settings.set({
+        value: {
+            mode: "pac_script",
+            pacScript: {
+                data: getNewPAC(rules)
+            }
+        },
+        scope: 'regular'
+    });
+}
+
+function updateStorage(rules) {
+    var obj = {};
+
+    obj[PROXY_RULES_KEY] = rules;
+    chrome.storage.local.set(obj);
+}
+
+function getNewPAC(rules) {
+    var proxys = [
+        "PROXY 10.16.13.18:8080",
+        "PROXY proxy.corp.qihoo.net:8080"
+    ].join('; ');
+
+    var pac = [
+        'function FindProxyForURL(url,host){var OUT_WALLS=',
+        JSON.stringify(rules),
+        ';var PROXYS="',
+        proxys,
+        '";if(OUT_WALLS.indexOf(host)<0)return "DIRECT";return PROXYS;}'
+    ].join('');
+console.log(pac);
+    return pac;
+}

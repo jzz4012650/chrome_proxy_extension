@@ -1,22 +1,30 @@
 <!doctype html>
 <html>
-  <head>
+<head>
     <title>Getting Started Extension's Popup</title>
     <style>
-      body {
-        font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
-        font-size: 12px;
-      }
-      /*#status {
-        white-space: pre;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        max-width: 400px;
-      }*/
+        body {
+            font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+            font-size: 14px;
+            width: 400px;
+        }
     </style>
     <script src="popup.js"></script>
-  </head>
-  <body>
-    <div id="status"><div>
-  </body>
+</head>
+
+<body>
+    <div>
+        <span>当前域名:</span>
+        <span id="curHost"></span>
+        <select id="proxyMode">
+            <option value="0">Direct</option>
+            <option value="1">Proxy</option>
+        </select>
+    </div>
+    <div id="status"></div>
+    <div class="btns">
+        <button type="button" id="btnStartProxy">开启代理</button>
+        <button type="button" id="btnStopProxy">关闭代理</button>
+    </div>
+</body>
 </html>
