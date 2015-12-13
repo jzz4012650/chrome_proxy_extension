@@ -9,10 +9,14 @@
         "default_popup": "popup.html",
         "default_title": "Proxy"
     },
+    "background": {
+        "scripts": ["background.js"]
+    },
     "permissions": [
         "proxy",
         "tabs",
         "storage",
+        "webRequest",
         "http://*/*",
         "https://*/*"
     ]

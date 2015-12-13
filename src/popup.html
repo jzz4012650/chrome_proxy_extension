@@ -8,23 +8,30 @@
             font-size: 14px;
             width: 400px;
         }
+        .hostList{
+            list-style: none;
+        }
+        li{
+            list-style: none;
+        }
     </style>
     <script src="popup.js"></script>
 </head>
 
 <body>
-    <div>
+    <!-- <div>
         <span>当前域名:</span>
         <span id="curHost"></span>
         <select id="proxyMode">
             <option value="0">Direct</option>
             <option value="1">Proxy</option>
         </select>
-    </div>
-    <div id="status"></div>
+    </div> -->
     <div class="btns">
-        <button type="button" id="btnStartProxy">开启代理</button>
-        <button type="button" id="btnStopProxy">关闭代理</button>
+        <span>Global Switch:</span>
+        <button type="button" id="btnMainSwitch">ON</button>
     </div>
+    <p>域名列表：</p>
+    <ul id="hostList"><ul>
 </body>
 </html>

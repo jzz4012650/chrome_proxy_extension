@@ -1,75 +1,72 @@
-var PROXY_QIHOO = {
-    mode: "fixed_servers",
-    rules: {
-        singleProxy: {
-            host: "10.16.13.18",
-            port: 8080
-        },
-        bypassList: ["<local>", "*corp.qihoo.net"]
+var PROXY_SYSTEM = {
+    scope: 'regular',
+    value: {
+        mode: "system"
     }
 }
-var PROXY_DIRECT = {
-    mode: "direct"
-}
-var PROXY_RULES_KEY = 'proxy_rules';
 
-chrome.proxy.settings.get(
-          {'incognito': false},
-          function(config) {console.log(config)});
+var backgroundPage = chrome.extension.getBackgroundPage(),
+    STORAGE_KEY = backgroundPage['STORAGE_KEY'],
+    hosts = backgroundPage['hosts'],
+    proxyRules = [];
+
 
 document.addEventListener('DOMContentLoaded', function() {
-
 
     var curHostDOM = document.querySelector('#curHost');
     var proxyModeDOM = document.querySelector('#proxyMode');
     var statusDOM = document.querySelector('#status');
+    var hostListDOM = document.querySelector('#hostList');
+    var btnMainSwitch = document.querySelector('#btnMainSwitch');
     var btnStartProxy = document.querySelector('#btnStartProxy');
     var btnStopProxy = document.querySelector('#btnStopProxy');
 
     var currentHost = null;
-    var proxyRules = null;
     var proxyRuleIndex = -1;
 
+    // get rule list
+    chrome.storage.local.get(null, function(obj) {
+        var value = obj[STORAGE_KEY];
+        if (value && Array.isArray(value)) {
+            proxyRules = value;
+        }
 
-    chrome.tabs.query({
-        active: true
-    }, function(tabs) {
-        var curURL = tabs[0].url;
-        var location = getLocation(curURL);
-        var host = location.hostname;
-
-        currentHost = host;
-        curHostDOM.innerText = host;
-
-        chrome.storage.local.get(null, function(obj) {
-            console.log(obj);
-            if (!(PROXY_RULES_KEY in obj)) {
-                proxyRules = [];
-            } else {
-                proxyRules = Array.isArray(obj[PROXY_RULES_KEY]) && obj[PROXY_RULES_KEY] || [];
-                console.log(proxyRules);
-                proxyRuleIndex = proxyRules.indexOf(host);
-
-                if (proxyRuleIndex >= 0) {
-                    proxyModeDOM.value = 1;
-                }
-            }
+        hostListHTML = hosts.map(function(host) {
+            var inList = proxyRules.indexOf(host) >= 0;
+            return [
+                '<li>',
+                    '<select>',
+                        '<option value="0" ' + (inList ? '' : 'selected') + '>Direct</option>',
+                        '<option value="1" ' + (inList ? 'selected' : '') + '>Proxy</option>',
+                    '</select>',
+                    '<span>' + host + '</span>',
+                '</li>'
+            ].join(' ');
         });
+        hostListDOM.innerHTML = hostListHTML.join('');
     });
 
-    btnStartProxy.addEventListener('click', function() {
-        startProxy(statusDOM)
-    }, false);
+    hostListDOM.addEventListener('change', function(event) {
+        var el = event.target;
 
-    btnStopProxy.addEventListener('click', function() {
-        stopProxy(statusDOM)
-    }, false);
+        if (el.tagName.toLowerCase() === 'select') {
+            var mode = el.value;
+            var host = el.parentNode.querySelector('span').innerText;
 
-    proxyModeDOM.addEventListener('change', function() {
-        var mode = this.value;
-        console.log(proxyRules);
-        changeProxyMode(currentHost, mode, proxyRules, proxyRuleIndex);
-    })
+            changeProxyMode(host, mode, proxyRules);
+        }
+    })；
+
+    btnMainSwitch.addEventListener('click', function(event) {
+        if (this.innerText == "ON") {
+            // TODO: off
+            chrome.proxy.settings.set(PROXY_SYSTEM);
+            chrome.storage.local.set({"switch": false});
+        } else {
+            // TODO: on
+            chrome.storage.local.set({"switch": true});
+        }
+    });
 })
 
 function getLocation(href) {
@@ -94,7 +91,9 @@ function stopProxy(statusDOM) {
     statusDOM.innerText = "DIRECT";
 }
 
-function changeProxyMode(host, mode, rules, index) {
+function changeProxyMode(host, mode, rules) {
+    var index = rules.indexOf(host);
+
     if (mode == 1 && index < 0) {
         // 添加host
         rules.push(host);
@@ -119,7 +118,7 @@ function changeProxyMode(host, mode, rules, index) {
 function updateStorage(rules) {
     var obj = {};
 
-    obj[PROXY_RULES_KEY] = rules;
+    obj[STORAGE_KEY] = rules;
     chrome.storage.local.set(obj);
 }
 
@@ -136,6 +135,6 @@ function getNewPAC(rules) {
         proxys,
         '";if(OUT_WALLS.indexOf(host)<0)return "DIRECT";return PROXYS;}'
     ].join('');
-console.log(pac);
+
     return pac;
 }
