@@ -7,31 +7,111 @@
             font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
             font-size: 14px;
             width: 400px;
+            margin: 0;
+            padding: .5em 1em;
+            animation: show .2s;
         }
-        .hostList{
-            list-style: none;
+
+        @keyframes show {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
-        li{
+
+        .global-switch {
+            line-height: 1;
+            border-bottom: solid 1px #CCC;
+            padding: 0 0 .5em 0;
+        }
+
+        #mainSwitch {
+            width: 69px;
+            height: 27px;
+            position: relative;
+            cursor: pointer;
+            background: url("main_off.png") 0 0 no-repeat;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+
+        #mainSwitch.on {
+            background: url("main_on.png") 0 0 no-repeat;
+        }
+
+        .global-switch * {
+            vertical-align: middle;
+        }
+
+        #hostList {
+            min-height: 1.5em;
+            max-height: 15em;
+            padding: 0;
+            margin: 1em 0;
+            overflow-y: auto;
+            border: solid 1px #EEE;
+        }
+
+        #hostList.disabled {
+            -webkit-filter: grayscale(100%);
+        }
+
+        #hostList li {
+            padding: 0 .5em;
             list-style: none;
+            line-height: 1.5;
+        }
+
+        #hostList li * {
+            vertical-align: middle;
+        }
+
+        #hostList li:nth-child(odd) {
+            background: #EEE;
+        }
+
+        #hostList li i {
+            display: inline-block;
+            width: 69px;
+            height: 27px;
+            position: relative;
+            cursor: pointer;
+            background: url("off.png") 0 0 no-repeat;
+            transition: background 0.2s;
+        }
+
+        #hostList li i.on {
+            background: url("on.png") 0 0 no-repeat;
+        }
+
+        #hostList li i span,
+        #mainSwitch span {
+            position: absolute;
+            left: 0px;
+            top: 0;
+            width: 26px;
+            height: 26px;
+            background: url("switch_handler.png") 0 0 no-repeat;
+            transition: left 0.2s;
+        }
+
+        #hostList li i.on span,
+        #mainSwitch.on span {
+            left: 43px;
         }
     </style>
     <script src="popup.js"></script>
 </head>
 
 <body>
-    <!-- <div>
-        <span>当前域名:</span>
-        <span id="curHost"></span>
-        <select id="proxyMode">
-            <option value="0">Direct</option>
-            <option value="1">Proxy</option>
-        </select>
-    </div> -->
-    <div class="btns">
-        <span>Global Switch:</span>
-        <button type="button" id="btnMainSwitch">ON</button>
+    <div class="global-switch">
+        <span>插件开关:</span>
+        <i id="mainSwitch"><span></span></i>
     </div>
     <p>域名列表：</p>
-    <ul id="hostList"><ul>
+    <ul id="hostList">
+        <ul>
 </body>
 </html>
