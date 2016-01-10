@@ -1,7 +1,6 @@
 var backgroundPage = chrome.extension.getBackgroundPage(),
     hosts = backgroundPage["hosts"]
 
-
 document.addEventListener('DOMContentLoaded', function() {
 
     var hostListDOM = document.querySelector('#hostList');
@@ -11,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var proxyRuleIndex = -1;
 
     // get rule list
-    chrome.storage.local.get({
+    chrome.storage.sync.get({
         "proxy_rules": [],
         "switch": true
     }, function(obj) {
@@ -28,10 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return [
                 '<li>',
                 '<i ' + (inList ? 'class="on"' : '') + '><span></span></i>',
-                // '<select>',
-                // '<option value="0" ' + (inList ? '' : 'selected') + '>Direct</option>',
-                // '<option value="1" ' + (inList ? 'selected' : '') + '> Proxy</option>',
-                // '</select>',
                 '<span class="host-name">' + host + '</span>',
                 '</li>'
             ].join(' ');
@@ -62,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnMainSwitch.addEventListener('click', function(event) {
         var self = this;
         if (self.className === "on") {
-            chrome.storage.local.set({
+            chrome.storage.sync.set({
                 "switch": false
             }, function() {
                 self.className = "";
@@ -70,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 backgroundPage.stopProxy();
             });
         } else {
-            chrome.storage.local.set({
+            chrome.storage.sync.set({
                 "switch": true
             }, function() {
                 self.className = "on";
@@ -84,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function changeProxyMode(host, mode, fn) {
     var fuc = fn || function() {};
 
-    chrome.storage.local.get({
+    chrome.storage.sync.get({
         "proxy_rules": []
     }, function(obj) {
         var rules = obj["proxy_rules"]
@@ -96,7 +91,7 @@ function changeProxyMode(host, mode, fn) {
             rules.splice(index, 1);
         }
 
-        chrome.storage.local.set({
+        chrome.storage.sync.set({
             "proxy_rules": rules
         }, function() {
             backgroundPage.startProxy();
