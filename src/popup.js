@@ -1,20 +1,40 @@
-var backgroundPage = chrome.extension.getBackgroundPage(),
-    hosts = backgroundPage["hosts"]
+var backgroundPage = chrome.extension.getBackgroundPage();
+var tabs           = backgroundPage.tabs;
+var currentTabId   = backgroundPage.currentTabId;
+var settings       = backgroundPage.settings;
+
+// var options = chrome.storage.sync.get({
+//         proxy_servers: []
+//     }, function(obj) {
+//         proxyServersDOM.value = obj.proxy_servers.join('\n');
+//     })
 
 document.addEventListener('DOMContentLoaded', function() {
 
+    var mask = document.querySelector('.mask');
     var hostListDOM = document.querySelector('#hostList');
     var btnMainSwitch = document.querySelector('#mainSwitch');
+    var btnOpenOptionPage = document.querySelector('#btnOpenOptionPage');
 
     var currentHost = null;
     var proxyRuleIndex = -1;
 
+
+
     // get rule list
     chrome.storage.sync.get({
+        "proxy_servers": [],
         "proxy_rules": [],
-        "switch": true
+        "switch": false
     }, function(obj) {
+        var hosts      = tabs[currentTabId];
         var proxyRules = obj["proxy_rules"];
+console.log(obj["proxy_servers"]);
+        if (!obj["proxy_servers"].length) {
+            mask.style.display = 'flex';
+        } else {
+            mask.style.display = 'none';
+        }
 
         if (obj["switch"]) {
             btnMainSwitch.className = "on";
@@ -24,12 +44,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         hostListHTML = hosts.map(function(host) {
             var inList = proxyRules.indexOf(host) >= 0;
-            return [
-                '<li>',
-                '<i ' + (inList ? 'class="on"' : '') + '><span></span></i>',
-                '<span class="host-name">' + host + '</span>',
-                '</li>'
-            ].join(' ');
+            return `
+                <li>
+                    <i class="${inList ? 'on' : ''}"><span></span></i>
+                    <span class="host-name">${host}</span>
+                </li>
+            `;
         })
 
         hostListDOM.innerHTML = hostListHTML.join('');
@@ -57,23 +77,30 @@ document.addEventListener('DOMContentLoaded', function() {
     btnMainSwitch.addEventListener('click', function(event) {
         var self = this;
         if (self.className === "on") {
-            chrome.storage.sync.set({
-                "switch": false
-            }, function() {
-                self.className = "";
-                hostList.className = "disabled";
-                backgroundPage.stopProxy();
+            backgroundPage.stopProxy(function() {
+                chrome.storage.sync.set({
+                    "switch": false
+                }, function() {
+                    self.className = "";
+                    hostList.className = "disabled";
+                });
             });
         } else {
-            chrome.storage.sync.set({
-                "switch": true
-            }, function() {
-                self.className = "on";
-                hostList.className = "";
-                backgroundPage.startProxy();
-            });
+            backgroundPage.startProxy(function() {
+                chrome.storage.sync.set({
+                    "switch": true
+                }, function() {
+                    self.className = "on";
+                    hostList.className = "";
+                });
+            })
         }
     }, false);
+
+    // open options page
+    btnOpenOptionPage.addEventListener('click', function() {
+        chrome.runtime.openOptionsPage();
+    })
 })
 
 function changeProxyMode(host, mode, fn) {

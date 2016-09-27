@@ -41,6 +41,14 @@
             font-size: 14px;
         }
 
+        .server-address,
+        .server-port {
+            display: inline-block;
+        }
+        .server-port {
+            width: 5em;
+        }
+
         #btnSave {
             font-size: 14px;
             padding: .3em 1em;
@@ -56,8 +64,17 @@
     <div class="wrapper">
         <p>Proxy server addree (each one a line) </p>
         <p>eq: PROXY my.proxy.com:8080 SOCKS5 my.sock5.com:8080</p>
-        <p>
-            <textarea id="proxyServers" rows="8" cols="40"></textarea>
+        <p class="proxy-server">
+            <select id="proxyType">
+                <option value="PROXY">HTTP</option>
+                <option value="HTTPS">HTTPS</option>
+                <option value="SOCKS4">SOCKS4</option>
+                <option value="SOCKS5">SOCKS5</option>
+            </select>
+            <label for="">server:</label>
+            <input type="text" class="server-address" id="serverAddress" maxlength="128" />
+            <label for="">port:</label>
+            <input type="number" class="server-port" id="serverPort" value="8080" max="65530" min="0" />
         </p>
         <p>
             <button type="submit" id="btnSave">Save</button>

@@ -23,6 +23,7 @@
         "tabs",
         "storage",
         "webRequest",
+        "webNavigation",
         "http://*/*",
         "https://*/*"
     ]

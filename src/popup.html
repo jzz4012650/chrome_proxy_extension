@@ -102,17 +102,38 @@
         #mainSwitch.on span {
             left: 43px;
         }
+        .mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.75);
+            color: #FFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;;
+        }
+        .mask a{
+            text-decoration: none;
+        }
+        .mask a:hover{
+            text-decoration: underline;
+        }
     </style>
     <script src="popup.js"></script>
 </head>
 
 <body>
     <div class="global-switch">
-        <span>插件开关:</span>
+        <span>Main Switch:</span>
         <i id="mainSwitch"><span></span></i>
     </div>
-    <p>域名列表：</p>
-    <ul id="hostList">
-        <ul>
+    <p>Domain list：</p>
+    <ul id="hostList"></ul>
+    <div class="mask">
+        <span>please setup your proxy server first.</span>
+        <a id="btnOpenOptionPage" href="javascript:;">Option Page</a>
+    </div>
 </body>
 </html>
